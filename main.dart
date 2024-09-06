@@ -24,10 +24,25 @@ class TranslatorScreen extends StatefulWidget {
 
 class _TranslatorScreenState extends State<TranslatorScreen> {
   bool isRussianToMansi = true;
+  final TextEditingController _textController = TextEditingController();
+  String _translatedText = '';
 
   void _swapLanguages() {
     setState(() {
       isRussianToMansi = !isRussianToMansi;
+      _translateText(_textController.text);
+    });
+  }
+
+  void _translateText(String inputText) {
+    setState(() {
+      if (isRussianToMansi) {
+        // Преобразование русского текста в капслок для псевдомансийского
+        _translatedText = inputText.toUpperCase(); 
+      } else {
+        // Преобразование мансийского текста в строчные буквы для русского
+        _translatedText = inputText.toLowerCase();
+      }
     });
   }
 
@@ -55,6 +70,10 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
                     height: 120,
                     width: 480,
                     child: TextField(
+                      controller: _textController,
+                      onChanged: (text) {
+                        _translateText(text);
+                      },
                       decoration: InputDecoration(
                         border: OutlineInputBorder(),
                         hintText: 'Введите текст',
@@ -89,8 +108,8 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
                       border: Border.all(),
                       borderRadius: BorderRadius.circular(4.0),
                     ),
-                    child: const Text(
-                      'Перевод будет здесь',
+                    child: Text(
+                      _translatedText.isEmpty ? 'Перевод будет здесь' : _translatedText,
                       style: TextStyle(fontSize: 16),
                     ),
                   ),
