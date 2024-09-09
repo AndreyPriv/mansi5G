@@ -1,125 +1,245 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // Для использования Clipboard
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Русско-мансийский переводчик',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+        primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: TranslatorScreen(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
+class TranslatorScreen extends StatefulWidget {
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  _TranslatorScreenState createState() => _TranslatorScreenState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _TranslatorScreenState extends State<TranslatorScreen> {
+  bool isRussianToMansi = true;
+  final TextEditingController _textController = TextEditingController();
+  String _translatedText = '';
+  bool _isKeyboardVisible = false;
+  bool _isUpperCase = true;
 
-  void _incrementCounter() {
+  final List<String> _keyboardKeys = [
+    'й', 'ц', 'у', 'к', 'е', 'н', 'г', 'ш', 'щ', 'з', 'х', 'ъ',
+    'ф', 'ы', 'в', 'а', 'п', 'р', 'о', 'л', 'д', 'ж', 'э',
+    'я', 'ч', 'с', 'м', 'и', 'т', 'ь', 'б', 'ю', 'Backspace'
+  ];
+
+  void _swapLanguages() {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      isRussianToMansi = !isRussianToMansi;
+      _translateText(_textController.text);
     });
+  }
+
+  void _translateText(String inputText) {
+    setState(() {
+      if (isRussianToMansi) {
+        _translatedText = inputText.toUpperCase();
+      } else {
+        _translatedText = inputText.toLowerCase();
+      }
+    });
+  }
+
+  void _copyToClipboard() {
+    if (_translatedText.isNotEmpty) {
+      Clipboard.setData(ClipboardData(text: _translatedText));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Текст скопирован в буфер обмена')),
+      );
+    }
+  }
+
+  void _toggleKeyboard() {
+    setState(() {
+      _isKeyboardVisible = !_isKeyboardVisible;
+    });
+  }
+
+  void _toggleCase() {
+    setState(() {
+      _isUpperCase = !_isUpperCase;
+    });
+  }
+
+  Widget _buildVirtualKeyboard() {
+    return Container(
+      height: 240, // Ограничиваем высоту клавиатуры (можно подбирать под размер)
+      width: 480, // Ограничиваем ширину до размера поля ввода
+      child: Column(
+        children: [
+          GridView.builder(
+            shrinkWrap: true,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 12, // Количество клавиш в ряду
+            ),
+            itemCount: _keyboardKeys.length,
+            itemBuilder: (context, index) {
+              String key = _isUpperCase
+                  ? _keyboardKeys[index].toUpperCase()
+                  : _keyboardKeys[index].toLowerCase();
+              return Padding(
+                padding: const EdgeInsets.all(2.0),
+                child: ElevatedButton(
+                  onPressed: () => _onKeyPress(key),
+                  child: Text(key),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: Size(40, 40), // Квадратные кнопки
+                    maximumSize: Size(40, 40), // Фиксированный размер
+                    padding: EdgeInsets.zero, // Минимальные отступы
+                  ),
+                ),
+              );
+            },
+          ),
+          ElevatedButton(
+            onPressed: _toggleCase,
+            child: Text(_isUpperCase ? 'CAPS' : 'CAPS'),
+            style: ElevatedButton.styleFrom(
+              minimumSize: Size(40, 40),
+              maximumSize: Size(40, 40),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _onKeyPress(String key) {
+    if (key == 'Backspace') {
+      if (_textController.text.isNotEmpty) {
+        setState(() {
+          _textController.text =
+              _textController.text.substring(0, _textController.text.length - 1);
+        });
+      }
+    } else {
+      setState(() {
+        _textController.text += key;
+      });
+    }
+    _translateText(_textController.text); // Обработка текста после каждого ввода с виртуальной клавиатуры
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: const Text('Русско-мансийский переводчик'),
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+      body: SingleChildScrollView( // Добавляем прокрутку
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          isRussianToMansi ? 'Русский язык' : 'Мансийский язык',
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        SizedBox(height: 8),
+                        Stack(
+                          alignment: Alignment.bottomRight,
+                          children: [
+                            Container(
+                              height: 120,
+                              width: 480,
+                              child: TextField(
+                                controller: _textController,
+                                onChanged: (text) {
+                                  _translateText(text);
+                                },
+                                decoration: InputDecoration(
+                                  border: OutlineInputBorder(),
+                                  hintText: 'Введите текст',
+                                ),
+                                maxLines: null,
+                                expands: true,
+                                textAlignVertical: TextAlignVertical.top,
+                              ),
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.keyboard),
+                              onPressed: _toggleKeyboard,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: 16),
+                  IconButton(
+                    icon: Icon(Icons.swap_horiz, size: 36),
+                    onPressed: _swapLanguages,
+                  ),
+                  SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          isRussianToMansi ? 'Мансийский язык' : 'Русский язык',
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        SizedBox(height: 8),
+                        Stack(
+                          alignment: Alignment.bottomRight,
+                          children: [
+                            Container(
+                              height: 120,
+                              width: 480,
+                              padding: EdgeInsets.all(8.0),
+                              decoration: BoxDecoration(
+                                border: Border.all(),
+                                borderRadius: BorderRadius.circular(4.0),
+                              ),
+                              child: Text(
+                                _translatedText.isEmpty
+                                    ? 'Перевод будет здесь'
+                                    : _translatedText,
+                                style: TextStyle(fontSize: 16),
+                              ),
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.copy),
+                              onPressed: _copyToClipboard,
+                              tooltip: 'Копировать текст',
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 16),
+              _isKeyboardVisible
+                  ? _buildVirtualKeyboard() // Ограниченная клавиатура
+                  : Container(),
+            ],
+          ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
