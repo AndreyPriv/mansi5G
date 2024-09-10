@@ -1,55 +1,69 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from transformers import MBart50Tokenizer, MBartForConditionalGeneration
-import torch
+from transformers import AutoModelForSeq2SeqLM, NllbTokenizer
+from typing import List
 import uvicorn
+
+
+MODEL_SAVE_PATH = "./model"
+model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_SAVE_PATH)
+tokenizer = NllbTokenizer.from_pretrained(MODEL_SAVE_PATH)
 
 
 app = FastAPI()
 
-# Загрузите модель и токенизатор из локальной папки
-model_path = "./model"
-tokenizer_path = "./model"
 
-model = MBartForConditionalGeneration.from_pretrained(
-    "facebook/mbart-large-50-many-to-many-mmt"
-)
-tokenizer = MBart50Tokenizer.from_pretrained(
-    "facebook/mbart-large-50-many-to-many-mmt", src_lang="ru_RU"
-)
-
-
-# Классы для FastAPI
 class TranslationRequest(BaseModel):
     text: str
-    target_lang: str
+    src_lang: str
+    tgt_lang: str
 
 
 class TranslationResponse(BaseModel):
-    translation: str
+    translations: List[str]
 
 
-# Маршрут для перевода текста
-@app.post("/translate", response_model=TranslationResponse)
-async def translate(request: TranslationRequest):
-    # Токенизируем входной текст
-    model_inputs = tokenizer(request.text, return_tensors="pt")
-
-    # Принудительно задаем язык на основе входных данных
-    forced_bos_token_id = tokenizer.lang_code_to_id[request.target_lang]
-
-    # Генерируем перевод
-    generated_tokens = model.generate(
-        **model_inputs, forced_bos_token_id=forced_bos_token_id
+def translate(
+    text,
+    src_lang="rus_Cyrl",
+    tgt_lang="eng_Latn",
+    a=32,
+    b=3,
+    max_input_length=1024,
+    num_beams=4,
+    **kwargs
+):
+    tokenizer.src_lang = src_lang
+    tokenizer.tgt_lang = tgt_lang
+    inputs = tokenizer(
+        text,
+        return_tensors="pt",
+        padding=True,
+        truncation=True,
+        max_length=max_input_length,
     )
+    model.eval()
+    result = model.generate(
+        **inputs.to(model.device),
+        forced_bos_token_id=tokenizer.convert_tokens_to_ids(tgt_lang),
+        max_new_tokens=int(a + b * inputs.input_ids.shape[1]),
+        num_beams=num_beams,
+        **kwargs
+    )
+    return tokenizer.batch_decode(result, skip_special_tokens=True)
 
-    # Декодируем результат в строку
-    translation = tokenizer.batch_decode(generated_tokens, skip_special_tokens=True)
 
-    # Возвращаем перевод в виде ответа
-    return TranslationResponse(translation=translation[0])
+@app.post("/translate", response_model=TranslationResponse)
+def perform_translation(request: TranslationRequest):
+    translations = translate(
+        text=request.text, src_lang=request.src_lang, tgt_lang=request.tgt_lang
+    )
+    return TranslationResponse(translations=translations)
 
 
-# Пример вызова для проверки локально
-if __name__ == "__main__":
+def main():
     uvicorn.run(app)
+
+
+if __name__ == "__main__":
+    main()
