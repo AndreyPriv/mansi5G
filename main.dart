@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Для использования Clipboard
+import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 void main() {
   runApp(MyApp());
@@ -12,6 +14,7 @@ class MyApp extends StatelessWidget {
       title: 'Русско-мансийский переводчик',
       theme: ThemeData(
         primarySwatch: Colors.blue,
+        fontFamily: 'Noto Sans', // Using Noto Sans for better Cyrillic support
       ),
       home: TranslatorScreen(),
     );
@@ -33,24 +36,51 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
   final List<String> _keyboardKeys = [
     'й', 'ц', 'у', 'к', 'е', 'н', 'г', 'ш', 'щ', 'з', 'х', 'ъ',
     'ф', 'ы', 'в', 'а', 'п', 'р', 'о', 'л', 'д', 'ж', 'э',
-    'я', 'ч', 'с', 'м', 'и', 'т', 'ь', 'б', 'ю', 'Backspace'
+    'я', 'ч', 'с', 'м', 'и', 'т', 'ь', 'б', 'ю',
+    'ӈ', 'ӯ', // Adding Mansi-specific characters
+    'Backspace'
   ];
 
   void _swapLanguages() {
     setState(() {
       isRussianToMansi = !isRussianToMansi;
-      _translateText(_textController.text);
     });
   }
 
-  void _translateText(String inputText) {
-    setState(() {
-      if (isRussianToMansi) {
-        _translatedText = inputText.toUpperCase();
+  Future<void> _translateText() async {
+    final String apiUrl = 'http://localhost:8000/translate'; // Update this URL if your backend is on a different machine or port
+    try {
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({
+          'text': _textController.text,
+          'src_lang': isRussianToMansi ? 'rus_Cyrl' : 'mns_Cyrl',
+          'tgt_lang': isRussianToMansi ? 'mns_Cyrl' : 'rus_Cyrl',
+        }),
+      );
+
+      print('Raw response: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(utf8.decode(response.bodyBytes));
+        setState(() {
+          _translatedText = data['translations'][0];
+        });
+        print('Decoded translation: $_translatedText');
       } else {
-        _translatedText = inputText.toLowerCase();
+        setState(() {
+          _translatedText = 'Error: Unable to translate (Status ${response.statusCode})';
+        });
       }
-    });
+    } catch (e) {
+      setState(() {
+        _translatedText = 'Error: Unable to connect to the server ($e)';
+      });
+    }
   }
 
   void _copyToClipboard() {
@@ -76,37 +106,37 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
 
   Widget _buildVirtualKeyboard() {
     return Container(
-      height: 240, // Ограничиваем высоту клавиатуры (можно подбирать под размер)
-      width: 480, // Ограничиваем ширину до размера поля ввода
+      height: 280, // Increased height to accommodate additional keys
+      width: 480,
       child: Column(
         children: [
-          GridView.builder(
-            shrinkWrap: true,
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 12, // Количество клавиш в ряду
-            ),
-            itemCount: _keyboardKeys.length,
-            itemBuilder: (context, index) {
-              String key = _isUpperCase
-                  ? _keyboardKeys[index].toUpperCase()
-                  : _keyboardKeys[index].toLowerCase();
-              return Padding(
-                padding: const EdgeInsets.all(2.0),
-                child: ElevatedButton(
-                  onPressed: () => _onKeyPress(key),
-                  child: Text(key),
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: Size(40, 40), // Квадратные кнопки
-                    maximumSize: Size(40, 40), // Фиксированный размер
-                    padding: EdgeInsets.zero, // Минимальные отступы
+          Expanded(
+            child: GridView.builder(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 12,
+                childAspectRatio: 1.0,
+              ),
+              itemCount: _keyboardKeys.length,
+              itemBuilder: (context, index) {
+                String key = _isUpperCase
+                    ? _keyboardKeys[index].toUpperCase()
+                    : _keyboardKeys[index].toLowerCase();
+                return Padding(
+                  padding: const EdgeInsets.all(2.0),
+                  child: ElevatedButton(
+                    onPressed: () => _onKeyPress(key),
+                    child: Text(key),
+                    style: ElevatedButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                    ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
           ElevatedButton(
             onPressed: _toggleCase,
-            child: Text(_isUpperCase ? 'CAPS' : 'CAPS'),
+            child: Text(_isUpperCase ? 'CAPS' : 'caps'),
             style: ElevatedButton.styleFrom(
               minimumSize: Size(40, 40),
               maximumSize: Size(40, 40),
@@ -130,7 +160,6 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
         _textController.text += key;
       });
     }
-    _translateText(_textController.text); // Обработка текста после каждого ввода с виртуальной клавиатуры
   }
 
   @override
@@ -139,7 +168,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
       appBar: AppBar(
         title: const Text('Русско-мансийский переводчик'),
       ),
-      body: SingleChildScrollView( // Добавляем прокрутку
+      body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -153,8 +182,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
                       children: [
                         Text(
                           isRussianToMansi ? 'Русский язык' : 'Мансийский язык',
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                         SizedBox(height: 8),
                         Stack(
@@ -165,9 +193,6 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
                               width: 480,
                               child: TextField(
                                 controller: _textController,
-                                onChanged: (text) {
-                                  _translateText(text);
-                                },
                                 decoration: InputDecoration(
                                   border: OutlineInputBorder(),
                                   hintText: 'Введите текст',
@@ -187,9 +212,18 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
                     ),
                   ),
                   SizedBox(width: 16),
-                  IconButton(
-                    icon: Icon(Icons.swap_horiz, size: 36),
-                    onPressed: _swapLanguages,
+                  Column(
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.swap_horiz, size: 36),
+                        onPressed: _swapLanguages,
+                      ),
+                      SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: _translateText,
+                        child: Text('Перевести'),
+                      ),
+                    ],
                   ),
                   SizedBox(width: 16),
                   Expanded(
@@ -198,8 +232,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
                       children: [
                         Text(
                           isRussianToMansi ? 'Мансийский язык' : 'Русский язык',
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                         SizedBox(height: 8),
                         Stack(
@@ -234,7 +267,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
               ),
               SizedBox(height: 16),
               _isKeyboardVisible
-                  ? _buildVirtualKeyboard() // Ограниченная клавиатура
+                  ? _buildVirtualKeyboard()
                   : Container(),
             ],
           ),
