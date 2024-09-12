@@ -1,13 +1,14 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from transformers import AutoModelForSeq2SeqLM, NllbTokenizer
+from typing import List
 import re
 import sys
 import typing as tp
 import unicodedata
 from sacremoses import MosesPunctNormalizer
-import uvicorn  # Импортируем Uvicorn
-
+import uvicorn
 
 # Инициализация модели и токенизатора
 MODEL_SAVE_PATH = "./model"
@@ -44,18 +45,39 @@ def preproc(text: str) -> str:
     return clean
 
 
-# Перевод текста
+app = FastAPI()
+
+# Добавляем CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Разрешаем все источники
+    allow_credentials=True,
+    allow_methods=["*"],  # Разрешаем все методы
+    allow_headers=["*"],  # Разрешаем все заголовки
+)
+
+
+class TranslationRequest(BaseModel):
+    text: str
+    src_lang: str
+    tgt_lang: str
+
+
+class TranslationResponse(BaseModel):
+    translations: List[str]
+
+
+# Функция перевода текста
 def translate(
     text: str,
-    src_lang: str = "rus_Cyrl",
-    tgt_lang: str = "eng_Latn",
-    a: int = 32,
-    b: int = 3,
-    max_input_length: int = 1024,
-    num_beams: int = 4,
+    src_lang="rus_Cyrl",
+    tgt_lang="mns_Cyrl",
+    a=32,
+    b=3,
+    max_input_length=1024,
+    num_beams=4,
     **kwargs
-) -> tp.List[str]:
-    """Перевод текста"""
+):
     tokenizer.src_lang = src_lang
     tokenizer.tgt_lang = tgt_lang
     inputs = tokenizer(
@@ -65,7 +87,7 @@ def translate(
         truncation=True,
         max_length=max_input_length,
     )
-    model.eval()  # Отключаем режим тренировки
+    model.eval()
     result = model.generate(
         **inputs.to(model.device),
         forced_bos_token_id=tokenizer.convert_tokens_to_ids(tgt_lang),
@@ -76,37 +98,22 @@ def translate(
     return tokenizer.batch_decode(result, skip_special_tokens=True)
 
 
-# Инициализация FastAPI
-app = FastAPI()
-
-
-# Классы для входных данных
-class TranslationRequest(BaseModel):
-    text: str
-    src_lang: str  # Язык исходного текста
-    tgt_lang: str  # Язык перевода
-
-
-# Создаем роут для перевода текста
-@app.post("/translate/")
-def translate_text(request: TranslationRequest):
+# Обработка POST-запроса на перевод текста
+@app.post("/translate", response_model=TranslationResponse)
+def perform_translation(request: TranslationRequest):
     # Предобработка текста
     clean_text = preproc(request.text)
-    # Перевод текста
-    translation = translate(
-        clean_text,
-        src_lang=request.src_lang,
-        tgt_lang=request.tgt_lang,
+    translations = translate(
+        text=clean_text, src_lang=request.src_lang, tgt_lang=request.tgt_lang
     )
-    # Возвращаем результат
-    return {"translation": translation}
+
+    return TranslationResponse(translations=translations)
 
 
-# Функция для запуска Uvicorn
+# Функция запуска Uvicorn
 def main():
-    uvicorn.run(app)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
 
 
-# Запуск через uvicorn, если скрипт вызывается напрямую
 if __name__ == "__main__":
     main()
