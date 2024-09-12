@@ -37,7 +37,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
     'й', 'ц', 'у', 'к', 'е', 'н', 'г', 'ш', 'щ', 'з', 'х', 'ъ',
     'ф', 'ы', 'в', 'а', 'п', 'р', 'о', 'л', 'д', 'ж', 'э',
     'я', 'ч', 'с', 'м', 'и', 'т', 'ь', 'б', 'ю',
-    'ӈ', 'ӯ', // Adding Mansi-specific characters
+    'а̄', 'е̄', 'ё̄', 'ӣ', 'ӈ', 'о̄', 'ӯ', 'ы̄', 'э̄', 'ю̄', 'я̄', // Adding Mansi-specific characters
     'Backspace'
   ];
 
@@ -189,8 +189,8 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
                           alignment: Alignment.bottomRight,
                           children: [
                             Container(
-                              height: 120,
-                              width: 480,
+                              height: 200,
+                              width: 680,
                               child: TextField(
                                 controller: _textController,
                                 decoration: InputDecoration(
@@ -239,8 +239,8 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
                           alignment: Alignment.bottomRight,
                           children: [
                             Container(
-                              height: 120,
-                              width: 480,
+                              height: 200,
+                              width: 680,
                               padding: EdgeInsets.all(8.0),
                               decoration: BoxDecoration(
                                 border: Border.all(),
