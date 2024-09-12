@@ -7,7 +7,7 @@
 # Тест модели  
 Последний тест модели с метриками: NLLB_Preproc_text.ipynb  
 
-BLEU Russ->Mansi 24.97, chrF2++ = 49.07 / Mansi->Russ 27.06, chrF2++ = 53.04 (1600 test words)
+BLEU Russian->Mansi 24.97, chrF2++ = 49.07 / Mansi->Russian 27.06, chrF2++ = 53.04 (1600 test words)
 
 
 # Пример использование модели
