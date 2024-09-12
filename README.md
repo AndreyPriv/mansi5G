@@ -5,7 +5,10 @@
 Ссылка на hugging face:  запривачена, до подведения итогов  
 
 # Тест модели  
-Последний тест модели с метриками: NLLB_Preproc_text.ipynb
+Последний тест модели с метриками: NLLB_Preproc_text.ipynb  
+
+BLEU Russ->Mansi 24.97 / Mansi->Russ 27.06 (1600 words)
+
 
 # Пример использование модели
 ```python
