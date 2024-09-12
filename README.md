@@ -10,7 +10,7 @@
 BLEU Russian->Mansi 24.97, chrF2++ = 49.07 / Mansi->Russian 27.06, chrF2++ = 53.04 (1600 test words)
 
 
-# Пример использование модели
+# Пример использования модели
 ```python
 from transformers import AutoModelForSeq2SeqLM, NllbTokenizer
 
