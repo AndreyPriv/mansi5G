@@ -1,0 +1,7 @@
+version: "3.7"
+services:
+  mlops_fastapi:
+    build: .
+    container_name: mlops_fastapi_dc
+    ports:
+      - "8000:8000" 
