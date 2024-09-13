@@ -17,7 +17,8 @@
 
 [Посмотреть видео на Яндекс.Диске](https://disk.yandex.ru/i/xwFbzw74C2ZrCQ)
 
-
+### Ссылка на модель
+[Модель](https://drive.google.com/drive/folders/1WTjwXgYZ0hSjLzmdpoQ1eWM6TXOTbTar)
 
 ## Установка и запуск
 
