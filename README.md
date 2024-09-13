@@ -15,7 +15,7 @@
 
 ### Видео демонстрация работы
 
-[Посмотреть видео на Яндекс.Диске]((https://disk.yandex.ru/i/xwFbzw74C2ZrCQ))
+[Посмотреть видео на Яндекс.Диске](https://disk.yandex.ru/i/xwFbzw74C2ZrCQ)
 
 
 
