@@ -9,6 +9,13 @@
 
 BLEU Russian->Mansi 24.97, chrF2++ = 49.07 / Mansi->Russian 27.06, chrF2++ = 53.04 (1600 test words)
 
+# Выполненная работа  
+1. Адаптация токенизатора под задачу перевода с/на Мансийский язык (добавление токенов из мансийского языка): https://github.com/AndreyPriv/mansi5G/blob/Zozulia/Tokenization_NLLB_ru_mns.ipynb
+2. Очистка текста от непечатаемых символов и обучение NLLB-200's distilled 600M : https://github.com/AndreyPriv/mansi5G/blob/Zozulia/NLLB_VER_1.ipynb
+3. Обучение NLLB-200's distilled 600M : https://github.com/AndreyPriv/mansi5G/blob/Zozulia/NLLB_VER_1.ipynb
+4. Дообучение модели: https://github.com/AndreyPriv/mansi5G/blob/Zozulia/NLLB_Ver_2_Evaluating.ipynb
+5. Получение финальных метрик качества: https://github.com/AndreyPriv/mansi5G/blob/Zozulia/NLLB_Preproc_text.ipynb  
+
 
 # Пример использования модели
 ```python
