@@ -1,8 +1,8 @@
 # mansi5G  
 # Ссылки
-Ссылка на гугл диск с моделью: запривачена, до подведения итогов  
+Ссылка на гугл диск с моделью: https://drive.google.com/drive/u/1/folders/1WTjwXgYZ0hSjLzmdpoQ1eWM6TXOTbTar
 
-Ссылка на hugging face:  запривачена, до подведения итогов  
+Ссылка на hugging face:  https://huggingface.co/Anzovi/nllb-rus-mansi-V2
 
 # Тест модели  
 Последний тест модели с метриками: NLLB_Preproc_text.ipynb  
