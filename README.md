@@ -7,7 +7,7 @@
 # Тест модели  
 Последний тест модели с метриками: NLLB_Preproc_text.ipynb  
 
-BLEU Russian->Mansi 24.97, chrF2++ = 49.07 / Mansi->Russian 27.06, chrF2++ = 53.04 (1600 test words)
+BLEU Mansi->Russian 24.97, chrF2++ = 49.07 / Russian->Mansi 27.06, chrF2++ = 53.04 (1600 test words)
 
 # Выполненная работа  
 1. Адаптация токенизатора под задачу перевода с/на Мансийский язык (добавление токенов из мансийского языка): https://github.com/AndreyPriv/mansi5G/blob/Zozulia/Tokenization_NLLB_ru_mns.ipynb
