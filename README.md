@@ -19,7 +19,7 @@
 
 ### Ссылка на модель
 [Модель](https://drive.google.com/drive/folders/1WTjwXgYZ0hSjLzmdpoQ1eWM6TXOTbTar)
-
+[Hugging Face](https://huggingface.co/Anzovi/nllb-rus-mansi-V2/tree/main)
 ## Установка и запуск
 
 ### 1. Локальная установка
